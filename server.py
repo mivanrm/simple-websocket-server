@@ -2,6 +2,7 @@
 import sys
 import struct
 from base64 import b64encode
+import base64
 from hashlib import sha1
 import logging
 from socket import error as SocketError
@@ -172,16 +173,22 @@ class WebSocketHandler(StreamRequestHandler):
     def handle(self):
         while self.keep_alive:
             if not self.handshake_done:
-                self.data=self.rfile.read().strip().decode()
-                headers= self.data.split("\r\n")
+                print("meki")
+                arr=[]
+                while True:
+                    self.data=self.rfile.readline().decode().strip()
+                    arr.append(self.data)
+                    if not self.data:
+                        break
+                print("meki2")
                 print("{} wrote:".format(self.client_address[0]))
-                print(self.data)
-                if "Connection: Upgrade" in self.data and "Upgrade: websocket" in self.data:
-                    for item in headers:
+                print(arr)
+                if "Connection: Upgrade" in arr and "Upgrade: websocket" in arr:
+                    for item in arr:
                         if "Sec-WebSocket-Key" in item:
                             key= item.split(" ")[1]
                     GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
-                    hash = hashlib.sha1(key.encode() + GUID.encode())
+                    hash = sha1(key.encode() + GUID.encode())
                     response_key = base64.standard_b64encode(hash.digest()).strip()
                     response_key=response_key.decode('ASCII')
                     resp="HTTP/1.1 101 Switching Protocols\r\n" + \
@@ -189,7 +196,7 @@ class WebSocketHandler(StreamRequestHandler):
                     "Connection: Upgrade\r\n" + \
                     "Sec-WebSocket-Accept: %s\r\n\r\n"%(response_key)
                     resp=resp.encode()
-                    self.handshake_done = self.request.send(resp.encode())
+                    self.handshake_done = self.request.send(resp)
                     self.valid_client = True
                     self.server._new_client_(self)
                 else:
@@ -276,21 +283,9 @@ class WebSocketHandler(StreamRequestHandler):
         """
 
         # Validate message
-        if isinstance(message, bytes):
-            message = try_decode_UTF8(message)  # this is slower but ensures we have UTF-8
-            if not message:
-                logger.warning("Can\'t send message, message is not valid UTF-8")
-                return False
-        elif sys.version_info < (3,0) and (isinstance(message, str) or isinstance(message, unicode)):
-            pass
-        elif isinstance(message, str):
-            pass
-        else:
-            logger.warning('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
-            return False
-
         header  = bytearray()
-        payload = encode_to_UTF8(message)
+        print (message)
+        payload = message.encode('utf-8')
         payload_length = len(payload)
 
         # Normal payload
@@ -365,14 +360,11 @@ def client_left(client, server):
 
 # Called when a client sends a message
 def message_received(client, server, message):
-	if len(message) > 200:
-		message = message[:200]+'..'
-	print("Client(%d) said: %s" % (client['id'], message))
+    print(message)
+    server.send_message(client,message)
 
-if __name__ == "__main__":    
-    PORT=9001
-    server = WebsocketServer(PORT)
-    server.set_fn_new_client(new_client)
-    server.set_fn_client_left(client_left)
-    server.set_fn_message_received(message_received)
-    server.run_forever()
+
+PORT=9001
+server = WebsocketServer(PORT)
+server.set_fn_message_received(message_received)
+server.run_forever()
