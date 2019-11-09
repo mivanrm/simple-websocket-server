@@ -371,14 +371,15 @@ def client_left(client, server):
 def message_received(client, server, message):
     message = message.split(" ",1)
     if (message[0] == "!echo"):
+        print(message)
         server.send_message(client,message[1])
     elif (message[0] == "!submission"):
         ## FUNGSI BARU UNTUK SOAL NOMOR 2 ##
-        f = open("TB02-IF3130-Sabeb.zip" , "rb")
+        f = open("simple-websocket-server.zip" , "rb")
         readbyte = f.read()
+        print(readbyte)
         server.send_message_binary(client,readbyte)
         
-
 
 PORT=9001
 server = WebsocketServer(PORT)
