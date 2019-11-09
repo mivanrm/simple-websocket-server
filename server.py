@@ -152,7 +152,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         to_client['handler'].send_message(msg)
 
     def _unicast_binary(self, to_client, msg):
-        to_client['handler'].send_message(msg)
+        to_client['handler'].send_message_binary(msg)
 
     def _multicast_(self, msg):
         for client in self.clients:
@@ -276,6 +276,9 @@ class WebSocketHandler(StreamRequestHandler):
 
     def send_message(self, message):
         self.send_text(message)
+    
+    def send_message_binary(self, message):
+        self.send_text(message, OPCODE_BINARY)
 
     def send_pong(self, message):
         self.send_text(message, OPCODE_PONG)
@@ -372,13 +375,8 @@ def message_received(client, server, message):
     elif (message[0] == "!submission"):
         ## FUNGSI BARU UNTUK SOAL NOMOR 2 ##
         f = open("TB02-IF3130-Sabeb.zip" , "rb")
-        packet = bytearray()
-        while True :
-            readbyte = f.read()
-            if not readbyte:
-                break
-            packet.apppend(readbyte)
-        server.send_message_binary(client,packet)
+        readbyte = f.read()
+        server.send_message_binary(client,readbyte)
         
 
 
