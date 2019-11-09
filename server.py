@@ -82,6 +82,9 @@ class API():
 
     def send_message(self, client, msg):
         self._unicast_(client, msg)
+    
+    def send_message_binary(self, client, msg):
+        self._unicast_binary(client,msg)
 
     def send_message_to_all(self, msg):
         self._multicast_(msg)
@@ -146,6 +149,9 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             self.clients.remove(client)
 
     def _unicast_(self, to_client, msg):
+        to_client['handler'].send_message(msg)
+
+    def _unicast_binary(self, to_client, msg):
         to_client['handler'].send_message(msg)
 
     def _multicast_(self, msg):
@@ -282,8 +288,10 @@ class WebSocketHandler(StreamRequestHandler):
 
         # Validate message
         header  = bytearray()
-        print (message)
-        payload = message.encode('utf-8')
+        if (opcode == 0x2):
+            payload = message
+        else:
+            payload = message.encode('utf-8')
         payload_length = len(payload)
 
         # Normal payload
@@ -361,6 +369,17 @@ def message_received(client, server, message):
     message = message.split(" ",1)
     if (message[0] == "!echo"):
         server.send_message(client,message[1])
+    elif (message[0] == "!submission"):
+        ## FUNGSI BARU UNTUK SOAL NOMOR 2 ##
+        f = open("TB02-IF3130-Sabeb.zip" , "rb")
+        packet = bytearray()
+        while True :
+            readbyte = f.read()
+            if not readbyte:
+                break
+            packet.apppend(readbyte)
+        server.send_message_binary(client,packet)
+        
 
 
 PORT=9001
