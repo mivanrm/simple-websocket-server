@@ -358,7 +358,9 @@ def client_left(client, server):
 
 # Called when a client sends a message
 def message_received(client, server, message):
-    server.send_message(client,message)
+    message = message.split(" ",1)
+    if (message[0] == "!echo"):
+        server.send_message(client,message[1])
 
 
 PORT=9001
