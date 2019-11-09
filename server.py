@@ -2,10 +2,12 @@ import socketserver
 import base64
 
 import hashlib
-class TCPhandler(socketserver.BaseRequestHandler):
+class TCPhandler(socketserver.StreamRequestHandler):
     def handle(self):
-        self.data=self.request.recv(1024).strip().decode()
+        self.data=self.rfile.read().strip().decode()
         headers= self.data.split("\r\n")
+        print("{} wrote:".format(self.client_address[0]))
+        print(self.data)
 
         if "Connection: Upgrade" in self.data and "Upgrade: websocket" in self.data:
             for item in headers:
@@ -20,9 +22,9 @@ class TCPhandler(socketserver.BaseRequestHandler):
              "Connection: Upgrade\r\n" + \
              "Sec-WebSocket-Accept: %s\r\n\r\n"%(response_key)
             resp=resp.encode()
-            self.request.sendall(resp)
+            self.wfile.write(resp)
         else:
-            self.request.sendall("HTTP/1.1 400 Bad Request\r\n" + \
+            self.wfile.write("HTTP/1.1 400 Bad Request\r\n" + \
                                  "Content-Type: text/plain\r\n" + \
                                  "Connection: close\r\n" + \
                                  "\r\n" + \
