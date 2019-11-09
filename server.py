@@ -45,7 +45,7 @@ class TCPhandler(socketserver.StreamRequestHandler):
                                  "\r\n" + \
                                  "Incorrect request")
 
-def read_bytes(self, num):
+    def read_bytes(self, num):
         # python3 gives ordinal of byte directly
         bytes = self.rfile.read(num)
         if sys.version_info[0] < 3:
