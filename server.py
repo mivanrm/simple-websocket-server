@@ -1,4 +1,3 @@
-
 import sys
 import struct
 from base64 import b64encode
@@ -69,6 +68,10 @@ class API():
         pass
 
     def message_received(self, client, server, message):
+        print(4)
+        pass
+
+    def message_received_binary(self, client, server, message):
         pass
 
     def set_fn_new_client(self, fn):
@@ -78,7 +81,11 @@ class API():
         self.client_left = fn
 
     def set_fn_message_received(self, fn):
+        print(3)
         self.message_received = fn
+
+    def set_fn_message_received_binary(self, fn):
+        self.message_received_binary = fn
 
     def send_message(self, client, msg):
         self._unicast_(client, msg)
@@ -124,7 +131,11 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.port = self.socket.getsockname()[1]
 
     def _message_received_(self, handler, msg):
+        print(2)
         self.message_received(self.handler_to_client(handler), self, msg)
+
+    def _message_received_binary_ (self, handler, msg):
+        self.message_received_binary(self.handler_to_client(handler),self,msg)
 
     def _ping_received_(self, handler, msg):
         handler.send_pong(msg)
@@ -249,9 +260,9 @@ class WebSocketHandler(StreamRequestHandler):
             logger.warn("Continuation frames are not supported.")
             return
         elif opcode == OPCODE_BINARY:
-            logger.warn("Binary frames are not supported.")
-            return
+            opcode_handler = self.server._message_received_binary_
         elif opcode == OPCODE_TEXT:
+            print(1)
             opcode_handler = self.server._message_received_
         elif opcode == OPCODE_PING:
             opcode_handler = self.server._ping_received_
@@ -379,8 +390,10 @@ def message_received(client, server, message):
         readbyte = f.read()
         print(readbyte)
         server.send_message_binary(client,readbyte)
-        
 
+def message_receive_binary(client, server, message):
+    print ("A")
+    
 PORT=9001
 server = WebsocketServer(PORT)
 server.set_fn_message_received(message_received)
