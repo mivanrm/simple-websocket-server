@@ -173,14 +173,12 @@ class WebSocketHandler(StreamRequestHandler):
     def handle(self):
         while self.keep_alive:
             if not self.handshake_done:
-                print("meki")
                 arr=[]
                 while True:
                     self.data=self.rfile.readline().decode().strip()
                     arr.append(self.data)
                     if not self.data:
                         break
-                print("meki2")
                 print("{} wrote:".format(self.client_address[0]))
                 print(arr)
                 if "Connection: Upgrade" in arr and "Upgrade: websocket" in arr:
@@ -360,7 +358,6 @@ def client_left(client, server):
 
 # Called when a client sends a message
 def message_received(client, server, message):
-    print(message)
     server.send_message(client,message)
 
 
