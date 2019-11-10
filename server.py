@@ -2,7 +2,7 @@ import sys
 import struct
 from base64 import b64encode
 import base64
-from hashlib import sha1
+from hashlib import sha1,md5
 import logging
 from socket import error as SocketError
 import errno
@@ -135,6 +135,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.message_received(self.handler_to_client(handler), self, msg)
 
     def _message_received_binary_ (self, handler, msg):
+        print("masuk")
         self.message_received_binary(self.handler_to_client(handler),self,msg)
 
     def _ping_received_(self, handler, msg):
@@ -247,7 +248,7 @@ class WebSocketHandler(StreamRequestHandler):
         opcode = b1 & OPCODE
         masked = b2 & MASKED
         payload_length = b2 & PAYLOAD_LEN
-
+        print("opcode"+str(opcode))
         if opcode == OPCODE_CLOSE_CONN:
             logger.info("Client asked to close connection.")
             self.keep_alive = 0
@@ -283,7 +284,12 @@ class WebSocketHandler(StreamRequestHandler):
         for message_byte in self.read_bytes(payload_length):
             message_byte ^= masks[len(message_bytes) % 4]
             message_bytes.append(message_byte)
-        opcode_handler(self, message_bytes.decode('utf8'))
+        if opcode_handler == self.server._message_received_binary_:
+            print("masuk function")
+            opcode_handler(self, message_bytes)
+            
+        else:
+            opcode_handler(self, message_bytes.decode('utf8'))
 
     def send_message(self, message):
         self.send_text(message)
@@ -388,13 +394,28 @@ def message_received(client, server, message):
         ## FUNGSI BARU UNTUK SOAL NOMOR 2 ##
         f = open("simple-websocket-server.zip" , "rb")
         readbyte = f.read()
-        print(readbyte)
         server.send_message_binary(client,readbyte)
 
-def message_receive_binary(client, server, message):
-    print ("A")
+def message_received_binary(client, server, message):
+    print("masukfungsi")
+    f= open("received.zip","wb")
+    f.write(message)
+    receivedmd5=md5(message).hexdigest()
+    print("diterima"+receivedmd5)
+    f = open("simple-websocket-server.zip" , "rb")
+    readbyte = f.read()
+    readmd5=md5(readbyte).hexdigest()
+    print("dibaca"+readmd5)
+    if receivedmd5.lower()==readmd5.lower() :
+        print("vagabond")
+        server.send_message(client,"1")
+    else:
+        server.send_message(client,"0")
+        
+
     
 PORT=9001
 server = WebsocketServer(PORT)
 server.set_fn_message_received(message_received)
+server.set_fn_message_received_binary(message_received_binary)
 server.run_forever()
